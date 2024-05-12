@@ -1,42 +1,3 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-
-Kickstart.nvim is *not* a distribution.
-
-Kickstart.nvim is a template for your own configuration.
-  The goal is that you can read every line of code, top-to-bottom, understand
-  what your configuration is doing, and modify it to suit your needs.
-
-  Once you've done that, you should start exploring, configuring and tinkering to
-  explore Neovim!
-
-  If you don't know anything about Lua, I recommend taking some time to read through
-  a guide. One possible example:
-  - https://learnxinyminutes.com/docs/lua/
-
-
-  And then you can explore or search through `:help lua-guide`
-  - https://neovim.io/doc/user/lua-guide.html
-
-
-Kickstart Guide:
-
-I have left several `:help X` comments throughout the init.lua
-You should run that command and read that help section for more information.
-
-In addition, I have some `NOTE:` items throughout the file.
-These are for you, the reader to help understand what is happening. Feel free to delete
-them once you know what you're doing, but they should serve as a guide for when you
-are first encountering a few different constructs in your nvim config.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now :)
---]]
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
@@ -231,12 +192,18 @@ require('lazy').setup({
   -- { import = 'custom.plugins' },
 }, {})
 
--- [[ Setting options ]]
+-- [[ Setting options ]]   
+-- VIM OPTIONS -- 
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
+--
+-- Shift width and expand tab -- 
+vim.shiftwidth = 3
+vim.opt.expandtab = true
 
 -- Set highlight on search
-vim.o.hlsearch = false
+vim.o.hlsearch = true
+vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 
 -- Make line numbers default
 vim.wo.number = true
@@ -282,6 +249,24 @@ vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 -- Remap for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+vim.keymap.set({'n','v'}, '<A-v>', "<C-v>")
+
+
+-- TIP: Disable arrow keys in normal mode
+-- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+-- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+-- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+-- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+
+-- Keybinds to make split navigation easier.
+--  Use CTRL+<hjkl> to switch between windows
+--
+--  See `:help wincmd` for a list of all window commands
+vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+
 
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
@@ -476,8 +461,9 @@ require('mason-lspconfig').setup()
 local servers = {
   -- clangd = {},
   -- gopls = {},
-  -- pyright = {},
-  -- rust_analyzer = {},
+  -- pylsp = {},
+  rust_analyzer = {},
+--  zls = { filetypes = {'.zig', '.zig.zon'} },
   -- tsserver = {},
   -- html = { filetypes = { 'html', 'twig', 'hbs'} },
 
@@ -513,7 +499,61 @@ mason_lspconfig.setup_handlers {
     }
   end,
 }
+--
+--
+-- Override of default lspconfigs -- 
+local lspconfig = require('lspconfig')
+-- lspconfig.powershell_es.setup {
+--   bundle_path = "C:\\Users\\phaze\\AppData\\Local\\nvim-data\\mason\\packages\\powershell-editor-services\\PowerShellEditorServices",
+--   shell = "powershell.exe",
+-- }
+function Gopls_debugger()
+  lspconfig.gopls.setup {
+  capabilities = capabilities,
+  on_attach = on_attach,
+    settings = {},
+    cmd = {"gopls", "serve", "--debug=localhost:6060"}
+  }
+  lspconfig.gopls.restart()
+end
 
+
+lspconfig.gopls.setup {
+  capabilities = capabilities,
+  on_attach = on_attach,
+  settings = {},
+  cmd = {"gopls"}
+}
+
+lspconfig.zls.setup {
+  capabilities = capabilities,
+  on_attach = on_attach,
+  settings = {},
+  -- cmd = {'C:\\ProgramData\\zls\\zls.exe'},
+  -- filetypes = {'zig', 'zir', 'zig.zon'}
+}
+
+
+
+lspconfig.pylsp.setup {
+  capabilities = capabilities,
+  on_attach = on_attach,
+  settings = {
+    pylsp = {
+      plugins = {
+        black = { enabled = true },
+        autopep8 = {enabled = true},
+        pycodestyle = { ignore = "E501", "E231", "E302", "W293"},
+        jedi_completion = {fuzzy = true},
+        jedi = {
+          auto_import_modules = {"numpy", "pandas"},
+        },
+
+      },
+    },
+  },
+}
+--
 -- [[ Configure nvim-cmp ]]
 -- See `:help cmp`
 local cmp = require 'cmp'
@@ -561,6 +601,10 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
+
+vim.opt.tabstop = 3
+vim.opt.softtabstop = 3
+vim.opt.shiftwidth = 3
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
